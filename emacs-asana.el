@@ -14,5 +14,105 @@
 
 ;;;###autoload
 
+;; Basic workings:
+;; Pull all tasks from the target asana project
+;; Gather all tasks in agenda
+;; Convert them into an intermediate format
+;; Apply a resolution strategy between tasks that exist in both systems
+;; Update local tasks
+;; Update remote asana tasks
+
+;; Variables
+
+(defvar em-as-project-gid nil
+  "The emacs project gid that emacs-asana will write to.")
+
+(defvar em-as-asana-file-path nil
+  "The path of the file that emacs-asana will write tasks that have been created in asana but do not exist in agenda.")
+
+;; Functions
+
+(defun flatten (list-of-lists)
+  (apply #'append list-of-lists))
+
+(defun em-as-is-element-todo  ()
+  "Return true if the item is a todo."
+  (interactive)
+  (not (eq (nth 2 (org-heading-components)) nil))
+  )
+
+(defun return-element-if-no-todo-parent ()
+    "Return the element if it is a todo and has no parent todo, otherwise retuns nil."
+    (interactive)
+    (let ((ret-element (org-element-at-point))
+                      (ret-element-is-todo (em-as-is-element-todo)))
+      (if (org-up-heading-safe)
+          (if (and (not (em-as-is-element-todo)) ret-element-is-todo)
+              ret-element nil)
+          (if ret-element-is-todo ret-element nil)
+          )))
+
+(defun all-top-level-todos ()
+  "Return all todos from agenda which do not have a parent todo."
+  (seq-filter '(lambda (x) x) (org-map-entries '(return-element-if-no-todo-parent) 't 'agenda)))
+
+(defun path-to-tree (path)
+  "Takes a PATH of a file and return the org-element-trees associated with it."
+  (interactive)
+  (find-file path)
+  (org-ml-get-subtrees))
+
+(defun agenda-files-to-trees ()
+  "Return all subtrees of all agenda files."
+  (flatten (mapcar 'path-to-tree org-agenda-files)))
+
+(defun top-level-todos-for-node (node)
+  "Recursively find the top level todo items for a NODE, that is to say any todos with no todo above them in the tree."
+  (cond ((condition-case nil (org-ml-get-property :todo-keyword node) (error nil)) (list node))
+        ((eq (length (org-ml-get-children node)) 0) '())
+        (t (flatten (mapcar 'top-level-todos-for-node (org-ml-get-children node)))
+           )))
+
+(defun top-level-todos-for-nodes (nodes)
+  "Return all top level todos of a list of NODES."
+  (flatten (seq-filter (lambda (x) x) (mapcar 'top-level-todos-for-node nodes))))
 
 
+(defun next-level-todos-for-node (node)
+  "Given a todo NODE, find the next level of sub todos."
+  (top-level-todos-for-nodes (org-ml-get-children node)))
+
+(defun update-or-add-to-asana (nodes)
+    "TODO: For each todo node in NODES the function will check to see if the element has a task-gid property, if it does not, it will create the asana task and update the property, otherwise it will update the task in asana with all current properties."
+    )
+
+
+;; Playground
+
+
+(defun print-elements-of-list (list)
+  "Print each element of LIST on a line of its own."
+  (while list
+    (print (car list))
+    (setq list (cdr list))))
+
+
+(setq subtrees (nth 0(list (path-to-tree "~/notes/gtd/today.org"))))
+
+(length subtrees)
+
+(print-elements-of-list (top-level-todos-for-nodes subtrees))
+
+(mapcar (lambda (x) (org-ml-get-property :title x)) (top-level-todos-for-nodes subtrees))
+ 
+(org-ml-headline-get-node-property "CREATED" (nth 0 (next-level-todos-for-node (nth 0 (top-level-todos-for-nodes subtrees)))))
+
+(request
+ "http://httpbin.org/get"
+ :params '(("test" . "test2") ("key2" . "value2"))
+ :parser 'json-read
+ :success (cl-function
+           (lambda (&key data &allow-other-keys)
+             (message "I sent: %S" (assoc-default 'args data)))))
+
+(provide 'emacs-asana)
