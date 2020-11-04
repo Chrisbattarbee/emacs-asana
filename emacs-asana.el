@@ -42,23 +42,6 @@
   "Takes a LIST-OF-LISTS and return the elements of each in one list."
   (apply #'append list-of-lists))
 
-(defun em-as-is-element-todo  ()
-  "Return true if the item is a todo."
-  (interactive)
-  (not (eq (nth 2 (org-heading-components)) nil))
-  )
-
-(defun return-element-if-no-todo-parent ()
-    "Return the element if it is a todo and has no parent todo, otherwise retuns nil."
-    (interactive)
-    (let ((ret-element (org-element-at-point))
-                      (ret-element-is-todo (em-as-is-element-todo)))
-      (if (org-up-heading-safe)
-          (if (and (not (em-as-is-element-todo)) ret-element-is-todo)
-              ret-element nil)
-          (if ret-element-is-todo ret-element nil)
-          )))
-
 (defun all-top-level-todos ()
   "Return all todos from agenda which do not have a parent todo."
   (seq-filter '(lambda (x) x) (org-map-entries '(return-element-if-no-todo-parent) 't 'agenda)))
