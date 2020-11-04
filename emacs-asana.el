@@ -25,10 +25,13 @@
 ;; Variables
 
 (defvar em-as-project-gid nil
-  "The emacs project gid that emacs-asana will write to.")
+  "The asana project gid that emacs-asana will write to.")
 
 (defvar em-as-asana-file-path nil
   "The path of the file that emacs-asana will write tasks that have been created in asana but do not exist in agenda.")
+
+(defvar em-as-asana-bearer-token nil
+  "The bearer token used to auth with asana.")
 
 ;; Functions
 
@@ -70,20 +73,27 @@
   "Recursively find the top level todo items for a NODE, that is to say any todos with no todo above them in the tree."
   (cond ((condition-case nil (org-ml-get-property :todo-keyword node) (error nil)) (list node))
         ((eq (length (org-ml-get-children node)) 0) '())
-        (t (flatten (mapcar 'top-level-todos-for-node (org-ml-get-children node)))
-           )))
+        (t (flatten (mapcar 'top-level-todos-for-node (org-ml-get-children node))))))
 
 (defun top-level-todos-for-nodes (nodes)
   "Return all top level todos of a list of NODES."
   (flatten (seq-filter (lambda (x) x) (mapcar 'top-level-todos-for-node nodes))))
 
-
 (defun next-level-todos-for-node (node)
   "Given a todo NODE, find the next level of sub todos."
   (top-level-todos-for-nodes (org-ml-get-children node)))
 
+(defun map-element-to-asana-task (node)
+  "TODO: Take an org element in NODE and return the json data payload to be sent to asana.")
+
+(defun create-asana-task (node)
+  "TODO: Take an org element in NODE and create an asana task from it.")
+
+(defun update-asana-task (node)
+  "TODO: Take an org element in NODE and update the corresponding asana entry.  NODE must have a ASANA-TASK-GID property.")
+
 (defun update-or-add-to-asana (nodes)
-    "TODO: For each todo node in NODES the function will check to see if the element has a task-gid property, if it does not, it will create the asana task and update the property, otherwise it will update the task in asana with all current properties."
+  "TODO: For each todo node in NODES the function will check to see if the element has a task-gid property, if it does not, it will create the asana task and update the property, otherwise it will update the task in asana with all current properties."
     )
 
 
