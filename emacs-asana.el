@@ -33,9 +33,13 @@
 (defvar em-as-asana-bearer-token nil
   "The bearer token used to auth with asana.")
 
+(defvar em-as-input-files org-agenda-files
+  "The files that emacs-asana will look through when collecting todos to sync.")
+
 ;; Functions
 
 (defun flatten (list-of-lists)
+  "Takes a LIST-OF-LISTS and return the elements of each in one list."
   (apply #'append list-of-lists))
 
 (defun em-as-is-element-todo  ()
@@ -67,7 +71,7 @@
 
 (defun agenda-files-to-trees ()
   "Return all subtrees of all agenda files."
-  (flatten (mapcar 'path-to-tree org-agenda-files)))
+  (flatten (mapcar 'path-to-tree em-as-input-files)))
 
 (defun top-level-todos-for-node (node)
   "Recursively find the top level todo items for a NODE, that is to say any todos with no todo above them in the tree."
